@@ -25,3 +25,10 @@ export function prependPostToFeedCache(post: FeedPost) {
     return { posts: [post, ...existing.posts] };
   });
 }
+
+export function removePostFromFeedCache(postId: string) {
+  apolloClient.cache.updateQuery<{ posts: FeedPost[] }>({ query: POSTS_QUERY }, (existing) => {
+    if (!existing?.posts) return existing;
+    return { posts: existing.posts.filter((p) => p.id !== postId) };
+  });
+}

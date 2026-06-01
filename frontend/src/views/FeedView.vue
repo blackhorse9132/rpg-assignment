@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useQuery } from '@vue/apollo-composable'
+import { apolloClient } from '@/apollo/client'
 import type { FeedPost } from '@/apollo/cacheUpdates'
-import { POSTS_QUERY } from '@/graphql/posts'
+import { removePostFromFeedCache } from '@/apollo/cacheUpdates'
+import { POSTS_QUERY, DELETE_POST_MUTATION } from '@/graphql/posts'
+import { useAuth } from '@/composables/useAuth'
 
 type PostsQueryData = {
   posts: FeedPost[]
@@ -10,7 +13,21 @@ type PostsQueryData = {
 
 const { result, loading, error } = useQuery<PostsQueryData>(POSTS_QUERY)
 
+const { user } = useAuth()
+
 const posts = computed(() => result.value?.posts ?? [])
+
+async function handleDelete(id: string) {
+  try {
+    await apolloClient.mutate({
+      mutation: DELETE_POST_MUTATION,
+      variables: { id },
+    })
+    removePostFromFeedCache(id)
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 const formatDate = (dateText: string) =>
   new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
@@ -29,7 +46,17 @@ const formatDate = (dateText: string) =>
 
     <section v-else class="posts">
       <article v-for="post in posts" :key="post.id" class="post-card">
-        <h2>{{ post.title }}</h2>
+        <div class="post-header">
+          <h2>{{ post.title }}</h2>
+          <button
+            v-if="user?.id === post.author.id"
+            type="button"
+            class="delete-button"
+            @click="handleDelete(post.id)"
+          >
+            Delete
+          </button>
+        </div>
         <p class="meta">
           By {{ post.author.email }} · {{ formatDate(post.createdAt) }}
         </p>
@@ -61,6 +88,21 @@ const formatDate = (dateText: string) =>
   border: 1px solid #d1d5db;
   border-radius: 8px;
   padding: 1rem;
+}
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.delete-button {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.35rem 0.65rem;
+  background: #dc2626;
+  color: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
 }
 .meta {
   color: #6b7280;

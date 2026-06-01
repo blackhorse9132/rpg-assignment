@@ -47,6 +47,19 @@ export class PostsResolver {
     return this.postsService.createPost(input, author);
   }
 
+  @UseGuards(GqlAuthGuard)
+  @Mutation(() => Boolean)
+  async deletePost(
+    @Args('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<Boolean> {
+    const author = await this.usersService.findById(user.sub);
+    if (!author) {
+      throw new Error('Author not found');
+    }
+    return this.postsService.deletePost(id, author);
+  }
+
   @Subscription(() => BlogPublishedPayload, {
     resolve: (payload: { blogPublished: BlogPublishedPayload }) =>
       payload.blogPublished,

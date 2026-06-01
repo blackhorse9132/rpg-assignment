@@ -30,6 +30,12 @@ export const CREATE_POST_MUTATION = gql`
   }
 `;
 
+export const DELETE_POST_MUTATION = gql`
+  mutation DeletePost($id: String!) {
+    deletePost(id: $id)
+  }
+`;
+
 export const BLOG_PUBLISHED_SUBSCRIPTION = gql`
   subscription BlogPublished {
     blogPublished {

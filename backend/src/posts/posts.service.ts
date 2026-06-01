@@ -59,4 +59,22 @@ export class PostsService {
     await this.pubSub.publish(BLOG_PUBLISHED_EVENT, { blogPublished: payload });
     return hydratedPost;
   }
+
+  async deletePost(id: string, author: User): Promise<boolean> {
+    const post = await this.postsRepository.findOne({
+      where: { id },
+      relations: ['author'],
+    });
+
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    if (post.author.id !== author.id) {
+      throw new Error('You can only delete your own posts');
+    }
+
+    await this.postsRepository.remove(post);
+    return true;
+  }
 }
